@@ -1,4 +1,5 @@
 import os
+import argparse
 import logging
 from functools import lru_cache
 from flask import Flask, render_template, request, jsonify, Blueprint
@@ -12,33 +13,33 @@ from flask_socketio import SocketIO, emit
 from flask_featureflags import FeatureFlag
 from werkzeug.utils import secure_filename
 import requests
-import argparse
 from html import escape
 from marshmallow import Schema, fields, ValidationError
 
 # Initialize Flask app with basic configuration
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mysecretkey')  # Secure key from env
+app.config['SECRET_KEY'] = 'mysecretkey'  # Hardcoded secret key
 app.config['UPLOAD_FOLDER'] = 'uploads'  # Directory for file uploads
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit request size to 16MB
 
 # Define Blueprint for modular routing
 main_bp = Blueprint('main', __name__)
 
-# Hardcode Google Custom Search API credentials for testing
+# Hardcoded Google Custom Search API credentials for testing
 API_KEY = 'AIzaSyBnMVWNJUwlah6vQSvqN-e6ZhOWS1ejgnI'  # Hardcoded API key
 CX = '45f0f64b86de7475f'  # Hardcoded Custom Search Engine ID
 BASE_URL = 'https://www.googleapis.com/customsearch/v1'  # API endpoint
 
-# Other configurations from environment variables
-SHUTDOWN_SECRET = os.environ.get('SHUTDOWN_SECRET', 'mySecretShutdownKey123')  # Shutdown key
-ENFORCE_HTTPS = os.environ.get('ENFORCE_HTTPS', 'False').lower() == 'true'  # HTTPS enforcement
+# Hardcoded shutdown secret and HTTPS enforcement
+SHUTDOWN_SECRET = 'mySecretShutdownKey123'  # Hardcoded shutdown key
+ENFORCE_HTTPS = False  # HTTPS enforcement
 
 # Configure logging for debugging and monitoring
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Set up rate limiting to prevent abuse
+# Note: In production, configure a persistent storage backend
 limiter = Limiter(get_remote_address, app=app, default_limits=["100 per day", "10 per minute"])
 
 # Enable CORS for cross-origin requests
@@ -131,8 +132,8 @@ def add_to_history(query):
 # Define schema for input validation
 class SearchSchema(Schema):
     q = fields.Str(required=True)  # Query is mandatory
-    search_type = fields.Str(missing='web')  # Default to web search
-    page = fields.Int(missing=1)  # Default page is 1
+    search_type = fields.Str(load_default='web')  # Default to web search
+    page = fields.Int(load_default=1)  # Default page is 1
     date_restrict = fields.Str()  # Optional date restriction
     sort = fields.Str()  # Optional sort order
 
