@@ -15,9 +15,9 @@
 }
 
 .container {
-    width: 90%;
+    width: 95%;
     max-width: 1200px; /* Increased max-width for larger image displays */
-    padding: 30px 40px;
+    padding: 20px;
     background-color: rgba(0, 0, 0, 0.7);
     border: 2px solid #48cae4; /* Neon cyan border */
     border-radius: 12px;
@@ -28,7 +28,7 @@
 
 /* Neon Titles and Subtitles */
 .neon-title {
-    font-size: 2.8em;
+    font-size: 2.2em;
     color: #ff00ff; /* Neon magenta */
     text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff;
     margin-bottom: 10px;
@@ -57,11 +57,12 @@
     display: flex;
     justify-content: center;
     margin-bottom: 15px;
+    flex-wrap: wrap; /* Ensure inputs stack on smaller screens */
 }
 
 .neon-select, .neon-input, .mystical-input {
     padding: 12px 15px;
-    margin: 0 8px;
+    margin: 5px; /* Reduced margin for better spacing on mobile */
     border: 1px solid #00ffff;
     border-radius: 8px;
     background-color: rgba(0, 0, 0, 0.5);
@@ -84,6 +85,7 @@
 
 .neon-button, .mystical-button {
     padding: 12px 25px;
+    margin: 5px; /* Reduced margin for better spacing on mobile */
     border: none;
     border-radius: 8px;
     background-color: #00ff99;
@@ -104,4 +106,49 @@
 .neon-button.danger-button, .mystical-button.danger-button {
     background-color: #ff4d4d;
     color: #330000;
-    box
+    box-shadow: 0 0 15px #ff4d4d, 0 0 5px rgba(255, 255, 255, 0.3) inset;
+}
+
+.mystical-results {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.mystical-result-item {
+    margin: 15px;
+    text-align: center;
+    max-width: 90%; /* Ensure it doesn't exceed screen width */
+}
+
+.mystical-result-title a {
+    color: #00ffcc;
+    text-decoration: none;
+    font-size: 1.2em;
+}
+
+.mystical-result-title a:hover {
+    text-decoration: underline;
+}
+
+.mystical-snippet {
+    margin-top: 8px;
+    font-size: 1em;
+}
+
+.result-image {
+    max-width: 100%; /* Ensure images are responsive */
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), 0 0 5px rgba(255, 255, 255, 0.3) inset;
+}
+
+.loading {
+    opacity: 0.5;
+}
+
+.pagination-buttons {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}

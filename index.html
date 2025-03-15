@@ -18,11 +18,16 @@
             </select>
         </form>
         <div id="results" class="mystical-results"></div>
+        <div id="pagination" class="pagination-buttons"></div>
     </div>
 
     <script>
         document.getElementById('search-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            performSearch(1);
+        });
+
+        function performSearch(page) {
             const query = document.getElementById('query').value.trim();
             const searchType = document.getElementById('search-type').value;
             if (!query) return; // Prevent empty searches
@@ -31,7 +36,7 @@
             resultsDiv.innerHTML = '<p class="mystical-loading">Loading results...</p>';
 
             // Fetch results from the server endpoint
-            fetch(`/search?q=${encodeURIComponent(query)}&search_type=${searchType}`)
+            fetch(`/search?q=${encodeURIComponent(query)}&search_type=${searchType}&page=${page}`)
                 .then(response => {
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     return response.json();
@@ -58,6 +63,24 @@
                             `;
                             resultsDiv.appendChild(result);
                         });
+
+                        // Add pagination buttons
+                        const paginationDiv = document.getElementById('pagination');
+                        paginationDiv.innerHTML = '';
+                        if (data.next) {
+                            const nextBtn = document.createElement('button');
+                            nextBtn.className = 'neon-button';
+                            nextBtn.innerText = 'Next Page';
+                            nextBtn.onclick = () => performSearch(page + 1);
+                            paginationDiv.appendChild(nextBtn);
+                        }
+                        if (data.previous) {
+                            const prevBtn = document.createElement('button');
+                            prevBtn.className = 'neon-button';
+                            prevBtn.innerText = 'Previous Page';
+                            prevBtn.onclick = () => performSearch(page - 1);
+                            paginationDiv.appendChild(prevBtn);
+                        }
                     } else {
                         resultsDiv.innerHTML = '<p class="mystical-no-results">No results found.</p>';
                     }
@@ -66,15 +89,7 @@
                     console.error('Error fetching results:', error);
                     resultsDiv.innerHTML = '<p class="mystical-error">Oops! Something went wrong.</p>';
                 });
-        });
-
-        // Optional: Lazy load full images on hover
-        document.addEventListener('mouseover', function(e) {
-            const img = e.target;
-            if (img.classList.contains('result-image') && !img.classList.contains('loading') && img.src !== img.dataset.full) {
-                img.src = img.dataset.full; // Swap to full image on hover
-            }
-        });
+        }
     </script>
 </body>
 </html>

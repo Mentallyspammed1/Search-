@@ -39,7 +39,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Set up rate limiting to prevent abuse
-# Note: In production, configure a persistent storage backend
 limiter = Limiter(get_remote_address, app=app, default_limits=["100 per day", "10 per minute"])
 
 # Enable CORS for cross-origin requests
