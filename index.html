@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Image Search</title>
+    <link rel="stylesheet" href="style.css"> <!-- Assumes style.css is in the same directory -->
+</head>
+<body class="mystical-neon-body">
+    <div class="container">
+        <h1 class="neon-title mystical-glow">Neon Image Search</h1>
+        <form id="search-form" class="search-input-area">
+            <input type="text" id="query" name="q" class="mystical-input" placeholder="Search for images..." required>
+            <button type="submit" class="neon-button">Search</button>
+        </form>
+        <div id="results" class="mystical-results"></div>
+    </div>
+
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('query').value.trim();
+            if (!query) return; // Prevent empty searches
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p class="mystical-loading">Loading images...</p>';
+
+            // Fetch image results from the server endpoint
+            fetch(`/search?q=${encodeURIComponent(query)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    resultsDiv.innerHTML = ''; // Clear loading message
+                    if (data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            const result = document.createElement('div');
+                            result.className = 'mystical-result-item';
+                            const thumbnail = item.image?.thumbnailLink || item.link; // Use thumbnail if available
+                            const fullImage = item.link; // Full image URL
+                            result.innerHTML = `
+                                <img src="${thumbnail}" 
+                                     class="result-image loading" 
+                                     data-full="${fullImage}" 
+                                     alt="${item.title || 'Image'}" 
+                                     onload="this.classList.remove('loading')" 
+                                     onerror="this.src='fallback-image.jpg'; this.classList.remove('loading')">
+                                <h3 class="mystical-result-title">
+                                    <a href="${fullImage}" target="_blank">${item.title || 'Untitled'}</a>
+                                </h3>
+                                <p class="mystical-snippet">${item.snippet || 'No description available'}</p>
+                            `;
+                            resultsDiv.appendChild(result);
+                        });
+                    } else {
+                        resultsDiv.innerHTML = '<p class="mystical-no-results">No images found.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching images:', error);
+                    resultsDiv.innerHTML = '<p class="mystical-error">Oops! Something went wrong.</p>';
+                });
+        });
+
+        // Optional: Lazy load full images on hover
+        document.addEventListener('mouseover', function(e) {
+            const img = e.target;
+            if (img.classList.contains('result-image') && !img.classList.contains('loading') && img.src !== img.dataset.full) {
+                img.src = img.dataset.full; // Swap to full image on hover
+            }
+        });
+    </script>
+</body>
+</html>

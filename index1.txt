@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Search Wizard - Mystical Edition</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body class="mystical-neon-body">
+    <div class="container">
+        <h1 class="neon-title mystical-glow">Neon Search Wizard</h1>
+        <p class="mystical-subtitle">Unveiling the Digital Mysteries</p>
+        <form id="search-form">
+            <div class="search-options">
+                <select id="search-type" name="search_type" class="neon-select mystical-input">
+                    <option value="web">Web</option>
+                    <option value="image">Image</option>
+                </select>
+                <select id="sort" class="neon-select mystical-input">
+                    <option value="">Relevance</option>
+                    <option value="date">Date</option>
+                </select>
+                <input type="date" id="date-restrict" placeholder="Date Filter" class="mystical-input">
+            </div>
+            <div class="search-input-area">
+                <input type="text" id="query" placeholder="Enter your search query" autocomplete="off" class="neon-input mystical-input">
+                <button type="submit" class="neon-button mystical-button">Search</button>
+            </div>
+        </form>
+        <div id="suggestions" class="suggestions mystical-suggestions"></div>
+        <div id="loading" class="loading mystical-loading" style="display:none;">Summoning Results...</div>
+        <div id="history" class="history mystical-history">
+            <h2 class="neon-subtitle mystical-glow">Search History</h2>
+        </div>
+        <div id="results" class="results mystical-results">
+            <!-- Search results will be displayed here -->
+        </div>
+        <div id="pagination" class="pagination mystical-pagination">
+            <button id="prev" class="neon-button mystical-button">Previous</button>
+            <span id="page-num" class="page-number mystical-text">Page 1</span>
+            <button id="next" class="neon-button mystical-button">Next</button>
+        </div>
+        <div class="actions mystical-actions">
+            <button id="export" class="neon-button mystical-button">Export Results</button>
+            <button id="dark-mode-toggle" class="neon-button mystical-button">Toggle Dark Mode</button>
+        </div>
+
+        <form id="shutdown-form" style="display:none;" class="mystical-shutdown-form">
+            <h2 class="neon-subtitle mystical-glow">Admin Panel - Shutdown</h2>
+            <input type="password" id="secret" placeholder="Enter secret key" class="mystical-input">
+            <button type="submit" class="neon-button mystical-button danger-button">Shutdown Server</button>
+        </form>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+        let currentResults = [];
+        let searchType = 'web';
+        let query = '';
+        const SEARCH_HISTORY_LIMIT = 10;
+
+        displayHistory();
+
+        document.getElementById('search-type').addEventListener('change', (e) => {
+            searchType = e.target.value;
+        });
+
+        document.getElementById('search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            query = document.getElementById('query').value;
+            searchType = document.getElementById('search-type').value;
+            currentPage = 1;
+            fetchResults();
+            saveSearch(query);
+            displayHistory();
+        });
+
+        document.getElementById('query').addEventListener('input', () => {
+            const q = document.getElementById('query').value;
+            if (q.length > 2) {
+                fetch(`http://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(q)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('suggestions').innerHTML = data[1].map(s => `<div class="suggestion-item mystical-suggestion-item" onclick="setSuggestion('${s}')">${s}</div>`).join('');
+                    });
+            } else {
+                document.getElementById('suggestions').innerHTML = '';
+            }
+        });
+
+        function setSuggestion(suggestion) {
+            document.getElementById('query').value = suggestion;
+            document.getElementById('suggestions').innerHTML = '';
+        }
+
+
+        document.getElementById('next').addEventListener('click', () => {
+            currentPage++;
+            fetchResults();
+        });
+
+        document.getElementById('prev').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchResults();
+            }
+        });
+
+        document.getElementById('export').addEventListener('click', () => {
+            if (currentResults && currentResults.items) {
+                const csv = currentResults.items.map(r => {
+                    let title = r.title ? r.title.replace(/,/g, ';') : '';
+                    let link = r.link ? r.link.replace(/,/g, ';') : '';
+                    return `${title},${link}`;
+                }).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'results.csv';
+                a.click();
+            } else {
+                alert('No results to export.');
+            }
+        });
+
+
+        document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        document.getElementById('shutdown-form').addEventListener('submit', e => {
+            e.preventDefault();
+            if (confirm('Shutdown server?')) {
+                fetch('/shutdown', { method: 'POST', body: new FormData(e.target) })
+                    .then(res => res.text())
+                    .then(text => alert(text));
+            }
+        });
+
+        function fetchResults() {
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const pageNumSpan = document.getElementById('page-num');
+            const dateRestrict = document.getElementById('date-restrict').value;
+            const sortOrder = document.getElementById('sort').value;
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            pageNumSpan.textContent = `Page ${currentPage}`;
+
+            let url = `/search?q=${encodeURIComponent(query)}&search_type=${searchType}&page=${currentPage}`;
+            if (dateRestrict) {
+                url += `&date_restrict=date:${dateRestrict}`;
+            }
+            if (sortOrder) {
+                url += `&sort=${sortOrder}`;
+            }
+
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    currentResults = data;
+                    loadingDiv.style.display = 'none';
+                    if (data.error) {
+                        resultsDiv.innerHTML = `<p class="error mystical-error">${data.error}</p>`;
+                    } else if (data.items && data.items.length > 0) {
+                        if (searchType === 'image' && data.items[0].image) {
+                            data.items.forEach(item => {
+                                resultsDiv.innerHTML += `<div class="result-item mystical-result-item">
+                                    <img src="${item.link}" alt="${item.title}" style="max-width:200px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #0ff;">
+                                    <p><a href="${item.image.contextLink}" class="mystical-link">${item.title}</a></p>
+                                    <div class="result-actions mystical-result-actions">
+                                        <button onclick="navigator.share({url: '${item.image.contextLink}', title: '${item.title}'})" class="neon-button mystical-button small-button">Share</button>
+                                        <button onclick="bookmark(${JSON.stringify(item)})" class="neon-button mystical-button small-button">Bookmark</button>
+                                        Rating: <input type="number" min="1" max="5" onchange="rate('${item.link}', this.value)" class="mystical-rating-input">
+                                        <textarea placeholder="Add comment" onchange="comment('${item.link}', this.value)" class="mystical-comment-input"></textarea>
+                                    </div>
+                                </div>`;
+                            });
+                        } else {
+                            data.items.forEach(item => {
+                                resultsDiv.innerHTML += `<div class="result-item mystical-result-item">
+                                    <h3 class="mystical-result-title"><a href="${item.link}" class="mystical-link">${item.title}</a></h3>
+                                    <p class="mystical-snippet">${item.snippet}</p>
+                                    <div class="result-actions mystical-result-actions">
+                                        <button onclick="navigator.share({url: '${item.link}', title: '${item.title}'})" class="neon-button mystical-button small-button">Share</button>
+                                        <button onclick="bookmark(${JSON.stringify(item)})" class="neon-button mystical-button small-button">Bookmark</button>
+                                        Rating: <input type="number" min="1" max="5" onchange="rate('${item.link}', this.value)" class="mystical-rating-input">
+                                        <textarea placeholder="Add comment" onchange="comment('${item.link}', this.value)" class="mystical-comment-input"></textarea>
+                                    </div>
+                                </div>`;
+                            });
+                        }
+                    } else {
+                        resultsDiv.innerHTML = "<p class='no-results mystical-no-results'>No results found, seeker.</p>";
+                    }
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.innerHTML = `<p class="error mystical-error">Failed to fetch results. The veil is thin...</p>`;
+                    console.error("Fetch error:", error);
+                });
+        }
+
+        function saveSearch(query) {
+            if (!searchHistory.includes(query)) {
+                searchHistory.push(query);
+                localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+                if (searchHistory.length > SEARCH_HISTORY_LIMIT) {
+                    searchHistory.shift();
+                }
+            }
+        }
+
+        function displayHistory() {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = '<h2 class="neon-subtitle mystical-glow">Search History</h2>' + searchHistory.map(q => `<div class="history-item mystical-history-item" onclick="setQueryFromHistory('${q}')">${q}</div>`).join('');
+        }
+
+        function setQueryFromHistory(historyQuery) {
+            document.getElementById('query').value = historyQuery;
+            query = historyQuery;
+            searchType = document.getElementById('search-type').value;
+            currentPage = 1;
+            fetchResults();
+        }
+
+
+        function bookmark(item) {
+            let bookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [];
+            const bookmarkItem = {
+                title: item.title,
+                link: item.link,
+                snippet: item.snippet,
+                imageLink: item.image ? item.image.contextLink : null,
+                type: searchType
+            };
+            bookmarks.push(bookmarkItem);
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            alert('Result bookmarked into the aether!');
+        }
+
+        function rate(link, value) {
+            let ratings = JSON.parse(localStorage.getItem('ratings')) || {};
+            ratings[link] = value;
+            localStorage.setItem('ratings', JSON.stringify(ratings));
+            console.log(`Rated ${link} with ${value} stars.`);
+        }
+
+        function comment(link, text) {
+            let comments = JSON.parse(localStorage.getItem('comments')) || {};
+            comments[link] = text;
+            localStorage.setItem('comments', JSON.stringify(comments));
+            console.log(`Commented on ${link}: ${text}`);
+        }
+
+
+    </script>
+</body>
+</html>

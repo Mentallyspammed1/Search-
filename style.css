@@ -1,0 +1,337 @@
+/* style.css - Mystical Neon Theme Optimized for Image Viewing */
+
+/* General Body and Container Styles */
+.mystical-neon-body {
+    font-family: 'Arial', sans-serif;
+    background-color: #03071e; /* Deep dark mystical background */
+    color: #f0f8ff; /* Ethereal off-white text */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px; /* Increased max-width for larger image displays */
+    padding: 30px 40px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #48cae4; /* Neon cyan border */
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(72, 202, 228, 0.7),
+                0 0 10px rgba(255, 255, 255, 0.2) inset;
+    text-align: center;
+}
+
+/* Neon Titles and Subtitles */
+.neon-title {
+    font-size: 2.8em;
+    color: #ff00ff; /* Neon magenta */
+    text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.neon-subtitle {
+    font-size: 1.2em;
+    color: #00ffcc; /* Neon cyan */
+    text-shadow: 0 0 5px #00ffcc, 0 0 8px #00ffcc;
+    margin-bottom: 25px;
+    font-style: italic;
+}
+
+.mystical-glow {
+    animation: mystical-glow-animation 2s infinite alternate;
+}
+
+@keyframes mystical-glow-animation {
+    from { text-shadow: 0 0 5px #00ffcc, 0 0 8px #00ffcc; }
+    to { text-shadow: 0 0 8px #00ffff, 0 0 12px #00ffff; }
+}
+
+/* Form Elements - Inputs, Selects, Button */
+.search-options, .search-input-area {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.neon-select, .neon-input, .mystical-input {
+    padding: 12px 15px;
+    margin: 0 8px;
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #ccf2ff;
+    font-size: 1em;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4),
+                0 0 4px rgba(255, 255, 255, 0.1) inset;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.mystical-input::placeholder {
+    color: #a6b8c7;
+}
+
+.neon-select:focus, .neon-input:focus, .mystical-input:focus {
+    border-color: #ff66ff;
+    box-shadow: 0 0 15px #ff66ff, 0 0 5px rgba(255, 255, 255, 0.3) inset;
+}
+
+.neon-button, .mystical-button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    background-color: #00ff99;
+    color: #001a00;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #00ff99, 0 0 5px rgba(255, 255, 255, 0.2) inset;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.neon-button:hover, .mystical-button:hover {
+    background-color: #00cc7a;
+    box-shadow: 0 0 20px #00cc7a, 0 0 8px rgba(255, 255, 255, 0.3) inset;
+}
+
+.neon-button.danger-button, .mystical-button.danger-button {
+    background-color: #ff4d4d;
+    color: #330000;
+    box-shadow: 0 0 15px #ff4d4d, 0 0 5px rgba(255, 255, 255, 0.2) inset;
+}
+
+.neon-button.danger-button:hover, .mystical-button.danger-button:hover {
+    background-color: #cc3d3d;
+    box-shadow: 0 0 20px #cc3d3d, 0 0 8px rgba(255, 255, 255, 0.3) inset;
+}
+
+.neon-button.small-button, .mystical-button.small-button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+/* Image-Specific Styling for Results */
+.results, .mystical-results {
+    margin-top: 25px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive image grid */
+    gap: 20px;
+}
+
+.result-item, .mystical-result-item {
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid #00ffcc;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.result-item:hover, .mystical-result-item:hover {
+    transform: scale(1.05); /* Slight zoom for focus */
+    box-shadow: 0 0 25px rgba(0, 255, 204, 0.6);
+    border-color: #00ffee;
+}
+
+/* Image Container within Result Items */
+.result-image {
+    width: 100%;
+    max-width: 280px; /* Limits image width for consistency */
+    height: auto;
+    border-radius: 8px;
+    border: 2px solid #00ffff; /* Neon cyan frame */
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    object-fit: cover; /* Ensures images scale nicely */
+    margin-bottom: 10px;
+    transition: box-shadow 0.3s;
+}
+
+.result-item:hover .result-image {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+}
+
+.mystical-result-title a {
+    color: #00ffff;
+    text-decoration: none;
+    font-size: 1.1em;
+    margin: 5px 0;
+    transition: color 0.3s;
+}
+
+.mystical-result-title a:hover {
+    color: #ccffff;
+    text-decoration: underline;
+}
+
+.mystical-snippet {
+    color: #d0e0e3;
+    font-size: 0.9em;
+    margin-top: 5px;
+    text-align: center;
+    max-width: 100%; /* Prevents overflow */
+    word-wrap: break-word;
+}
+
+.result-actions, .mystical-result-actions {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.mystical-result-actions button {
+    margin-bottom: 5px;
+}
+
+/* Suggestions, Loading, History, Pagination, Actions */
+.suggestions, .mystical-suggestions {
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 1px solid #00ffff;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-top: 5px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    position: absolute;
+    width: calc(100% - 20px - 16px);
+    z-index: 10;
+    display: none;
+}
+
+.suggestion-item, .mystical-suggestion-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
+}
+
+.suggestion-item:last-child, .mystical-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover, .mystical-suggestion-item:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.loading, .mystical-loading {
+    color: #ffff66;
+    text-shadow: 0 0 8px #ffff66;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.history, .mystical-history {
+    margin-top: 20px;
+}
+
+.history h2, .mystical-history h2 {
+    color: #00ffff;
+    margin-bottom: 15px;
+    text-shadow: 0 0 5px #00ffff;
+}
+
+.history-item, .mystical-history-item {
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.history-item:hover, .mystical-history-item:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-color: rgba(0, 255, 255, 0.5);
+}
+
+.pagination, .mystical-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.pagination button, .mystical-pagination button {
+    margin: 0 10px;
+}
+
+.page-number, .mystical-page-number {
+    color: #00ffff;
+    font-weight: bold;
+    margin: 0 15px;
+    line-height: 2.2;
+}
+
+.actions, .mystical-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Shutdown Form Styling */
+.mystical-shutdown-form {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.mystical-shutdown-form h2 {
+    color: #ff6666;
+    text-shadow: 0 0 5px #ff6666;
+    margin-bottom: 20px;
+}
+
+/* Error and No Results Messages */
+.error, .mystical-error {
+    color: #ff4d4d;
+    font-weight: bold;
+    text-shadow: 0 0 8px #ff4d4d;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.no-results, .mystical-no-results {
+    color: #cccccc;
+    font-style: italic;
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Responsive Adjustments for Image Viewing */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    .results, .mystical-results {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .result-image {
+        max-width: 180px;
+    }
+    .neon-title {
+        font-size: 2em;
+    }
+}
+
+/* Lazy Loading Placeholder */
+.result-image.loading {
+    background: linear-gradient(90deg, rgba(0, 255, 255, 0.2) 25%, rgba(0, 255, 255, 0.4) 50%, rgba(0, 255, 255, 0.2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Search Wizard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Neon Search Wizard</h1>
+        <form id="search-form">
+            <div class="search-options">
+                <select id="search-type" name="search_type">
+                    <option value="web">Web</option>
+                    <option value="image">Image</option>
+                </select>
+                <select id="sort">
+                    <option value="">Relevance</option>
+                    <option value="date">Date</option>
+                </select>
+                <input type="date" id="date-restrict" placeholder="Date Filter">
+            </div>
+            <div class="search-input-area">
+                <input type="text" id="query" placeholder="Enter your search query" autocomplete="off">
+                <button type="submit">Search</button>
+            </div>
+        </form>
+        <div id="suggestions" style="position:absolute;"></div>
+        <div id="loading" style="display:none;">Loading...</div>
+        <div id="history">
+            <h2>Search History</h2>
+        </div>
+        <div id="results">
+            <!-- Search results will be displayed here -->
+        </div>
+        <div id="pagination">
+            <button id="prev">Previous</button>
+            <span id="page-num">Page 1</span>
+            <button id="next">Next</button>
+        </div>
+        <div class="actions">
+            <button id="export">Export Results</button>
+            <button id="dark-mode-toggle">Toggle Dark Mode</button>
+        </div>
+
+        <form id="shutdown-form" style="display:none;"> <!-- Hidden for now, can be placed elsewhere -->
+            <h2>Shutdown Server</h2>
+            <input type="password" id="secret" placeholder="Enter secret key">
+            <button type="submit">Shutdown Server</button>
+        </form>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+        let currentResults = []; // Store current results for export
+        let searchType = 'web'; // Default search type
+        let query = ''; // Store current query
+        const SEARCH_HISTORY_LIMIT = 10;
+
+        displayHistory(); // Display history on page load
+
+        document.getElementById('search-type').addEventListener('change', (e) => {
+            searchType = e.target.value;
+        });
+
+        document.getElementById('search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            query = document.getElementById('query').value;
+            searchType = document.getElementById('search-type').value;
+            currentPage = 1; // Reset to page 1 on new search
+            fetchResults();
+            saveSearch(query);
+            displayHistory();
+        });
+
+        document.getElementById('query').addEventListener('input', () => {
+            const q = document.getElementById('query').value;
+            if (q.length > 2) {
+                fetch(`http://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(q)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('suggestions').innerHTML = data[1].map(s => `<div class="suggestion-item" onclick="setSuggestion('${s}')">${s}</div>`).join('');
+                    });
+            } else {
+                document.getElementById('suggestions').innerHTML = ''; // Clear suggestions if query is too short
+            }
+        });
+
+        function setSuggestion(suggestion) {
+            document.getElementById('query').value = suggestion;
+            document.getElementById('suggestions').innerHTML = ''; // Clear suggestions after selection
+        }
+
+
+        document.getElementById('next').addEventListener('click', () => {
+            currentPage++;
+            fetchResults();
+        });
+
+        document.getElementById('prev').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                fetchResults();
+            }
+        });
+
+        document.getElementById('export').addEventListener('click', () => {
+            if (currentResults && currentResults.items) {
+                const csv = currentResults.items.map(r => {
+                    let title = r.title ? r.title.replace(/,/g, ';') : ''; // Replace commas in title
+                    let link = r.link ? r.link.replace(/,/g, ';') : '';
+                    return `${title},${link}`;
+                }).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'results.csv';
+                a.click();
+            } else {
+                alert('No results to export.');
+            }
+        });
+
+
+        document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        document.getElementById('shutdown-form').addEventListener('submit', e => {
+            e.preventDefault();
+            if (confirm('Shutdown server?')) {
+                fetch('/shutdown', { method: 'POST', body: new FormData(e.target) })
+                    .then(res => res.text())
+                    .then(text => alert(text));
+            }
+        });
+
+        function fetchResults() {
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const pageNumSpan = document.getElementById('page-num');
+            const dateRestrict = document.getElementById('date-restrict').value;
+            const sortOrder = document.getElementById('sort').value;
+
+            resultsDiv.innerHTML = ''; // Clear previous results
+            loadingDiv.style.display = 'block';
+            pageNumSpan.textContent = `Page ${currentPage}`;
+
+            let url = `/search?q=${encodeURIComponent(query)}&search_type=${searchType}&page=${currentPage}`;
+            if (dateRestrict) {
+                url += `&date_restrict=date:${dateRestrict}`; // Example date format, adjust if needed
+            }
+            if (sortOrder) {
+                url += `&sort=${sortOrder}`;
+            }
+
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    currentResults = data; // Store results for export
+                    loadingDiv.style.display = 'none';
+                    if (data.error) {
+                        resultsDiv.innerHTML = `<p class="error">${data.error}</p>`;
+                    } else if (data.items && data.items.length > 0) {
+                        if (searchType === 'image' && data.items[0].image) {
+                            data.items.forEach(item => {
+                                resultsDiv.innerHTML += `<div class="result-item">
+                                    <img src="${item.link}" alt="${item.title}" style="max-width:200px;">
+                                    <p><a href="${item.image.contextLink}">${item.title}</a></p>
+                                    <div class="result-actions">
+                                        <button onclick="navigator.share({url: '${item.image.contextLink}', title: '${item.title}'})">Share</button>
+                                        <button onclick="bookmark(${JSON.stringify(item)})">Bookmark</button>
+                                        Rating: <input type="number" min="1" max="5" onchange="rate('${item.link}', this.value)">
+                                        <textarea placeholder="Add comment" onchange="comment('${item.link}', this.value)"></textarea>
+                                    </div>
+                                </div>`;
+                            });
+                        } else {
+                            data.items.forEach(item => {
+                                resultsDiv.innerHTML += `<div class="result-item">
+                                    <h3><a href="${item.link}">${item.title}</a></h3>
+                                    <p>${item.snippet}</p>
+                                    <div class="result-actions">
+                                        <button onclick="navigator.share({url: '${item.link}', title: '${item.title}'})">Share</button>
+                                        <button onclick="bookmark(${JSON.stringify(item)})">Bookmark</button>
+                                        Rating: <input type="number" min="1" max="5" onchange="rate('${item.link}', this.value)">
+                                        <textarea placeholder="Add comment" onchange="comment('${item.link}', this.value)"></textarea>
+                                    </div>
+                                </div>`;
+                            });
+                        }
+                    } else {
+                        resultsDiv.innerHTML = "<p>No results found.</p>";
+                    }
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.innerHTML = `<p class="error">Failed to fetch results. Please check your connection.</p>`;
+                    console.error("Fetch error:", error);
+                });
+        }
+
+        function saveSearch(query) {
+            if (!searchHistory.includes(query)) {
+                searchHistory.push(query);
+                localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+                if (searchHistory.length > SEARCH_HISTORY_LIMIT) {
+                    searchHistory.shift(); // Remove oldest entry if limit exceeded
+                }
+            }
+        }
+
+        function displayHistory() {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = '<h2>Search History</h2>' + searchHistory.map(q => `<div class="history-item" onclick="setQueryFromHistory('${q}')">${q}</div>`).join('');
+        }
+
+        function setQueryFromHistory(historyQuery) {
+            document.getElementById('query').value = historyQuery;
+            query = historyQuery; // Update global query variable
+            searchType = document.getElementById('search-type').value; // Keep current search type
+            currentPage = 1;
+            fetchResults();
+        }
+
+
+        function bookmark(item) {
+            let bookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [];
+            const bookmarkItem = {
+                title: item.title,
+                link: item.link,
+                snippet: item.snippet,
+                imageLink: item.image ? item.image.contextLink : null, // For image search bookmarks
+                type: searchType // Store search type to differentiate bookmarks if needed
+            };
+            bookmarks.push(bookmarkItem);
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            alert('Result bookmarked!'); // Simple feedback
+        }
+
+        function rate(link, value) {
+            let ratings = JSON.parse(localStorage.getItem('ratings')) || {};
+            ratings[link] = value;
+            localStorage.setItem('ratings', JSON.stringify(ratings));
+            console.log(`Rated ${link} with ${value} stars.`); // For debugging
+        }
+
+        function comment(link, text) {
+            let comments = JSON.parse(localStorage.getItem('comments')) || {};
+            comments[link] = text;
+            localStorage.setItem('comments', JSON.stringify(comments));
+            console.log(`Commented on ${link}: ${text}`); // For debugging
+        }
+
+
+    </script>
+</body>
+</html>
